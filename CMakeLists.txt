@@ -8,10 +8,16 @@ set(PACKAGE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX})
 
 ###############################################################################################
 
+option(BUILD_SHARED_LIBS   "if build shared libraries" ON)
+option(BUILD_STATIC_LIBS   "if build static libraries" ON)
 option(INSTALL_LIBRARIES   "if install libraries"   ON)
 option(INSTALL_EXECUTABLES "if install executables" ON)
 
 ###############################################################################################
+
+if (NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
+    message(FATAL_ERROR "at least one of BUILD_STATIC_LIBS and BUILD_SHARED_LIBS should be enabled.")
+endif()
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
@@ -23,27 +29,40 @@ add_definitions(-D_FILE_OFFSET_BITS=64)
 
 ###############################################################################################
 
-set(SRC_LIBBZ2 blocksort.c huffman.c crctable.c randtable.c compress.c decompress.c bzlib.c)
-
-add_library(bz2-static STATIC ${SRC_LIBBZ2})
-add_library(bz2-shared SHARED ${SRC_LIBBZ2})
-
-set_target_properties(bz2-static PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME static)
-set_target_properties(bz2-shared PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME shared)
+add_executable(bzip2 bzip2.c)
+add_executable(bzip2recover bzip2recover.c)
 
 ###############################################################################################
 
-add_executable(bzip2 bzip2.c)
-target_link_libraries(bzip2 bz2-static)
+set(SRC_LIBBZ2 blocksort.c huffman.c crctable.c randtable.c compress.c decompress.c bzlib.c)
 
-add_executable(bzip2recover bzip2recover.c)
+if (BUILD_SHARED_LIBS)
+    add_library(bz2-shared SHARED ${SRC_LIBBZ2})
+    set_target_properties(bz2-shared PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME shared)
+
+    target_link_libraries(bzip2 bz2-shared)
+endif()
+
+if (BUILD_STATIC_LIBS)
+    add_library(bz2-static STATIC ${SRC_LIBBZ2})
+    set_target_properties(bz2-static PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME static)
+
+    target_link_libraries(bzip2 bz2-static)
+endif()
 
 ###############################################################################################
 
 include(GNUInstallDirs)
 
 if (INSTALL_LIBRARIES)
-    install(TARGETS bz2-static bz2-shared LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    if (BUILD_STATIC_LIBS)
+        install(TARGETS bz2-static LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
+
+    if (BUILD_SHARED_LIBS)
+        install(TARGETS bz2-shared LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
+
     install(FILES ${CMAKE_BINARY_DIR}/libbz2.pc   DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
     install(FILES ${CMAKE_SOURCE_DIR}/bzlib.h     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
