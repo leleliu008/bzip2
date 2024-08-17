@@ -21,9 +21,9 @@ add_definitions(-D_FILE_OFFSET_BITS=64)
 set(SRC_LIBBZ2 blocksort.c huffman.c crctable.c randtable.c compress.c decompress.c bzlib.c)
 
 add_library(bz2-shared SHARED ${SRC_LIBBZ2})
-set_target_properties(bz2-shared PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME shared)
-
 add_library(bz2-static STATIC ${SRC_LIBBZ2})
+
+set_target_properties(bz2-shared PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME shared)
 set_target_properties(bz2-static PROPERTIES OUTPUT_NAME bz2 CLEAN_DIRECT_OUTPUT 1 EXPORT_NAME static)
 
 ###############################################################################################
